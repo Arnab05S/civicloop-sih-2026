@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.venv/
+backend/civicloop.db
+__pycache__/
+*.pyc
+.env

@@ -15,23 +15,38 @@ CivicLoop closes the loop between citizens and cities: reports become traceable 
 
 ## Run locally
 
-Open two terminals in the project root.
+The local addresses work only while the frontend and backend development servers are running.
 
-**Backend**
+**Fastest option (Windows)**
+
+From the project root, right-click `start-local.ps1` and select **Run with PowerShell**. It creates the Python environment if needed, installs the project dependencies, and opens two terminals for the API and frontend.
+
+Then open:
+
+- Frontend: http://127.0.0.1:5173
+- API docs: http://127.0.0.1:8000/docs
+
+**Manual option**
+
+Open two terminals in the project root. First install the backend dependencies once:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r backend\requirements.txt
+```
+
+Then run the backend:
 
 ```powershell
 .\.venv\Scripts\python.exe -m uvicorn backend.main:app --reload --port 8000
 ```
 
-API docs: http://127.0.0.1:8000/docs
-
-**Frontend**
+In the second terminal, run:
 
 ```powershell
+npm install
 npm run dev
 ```
-
-Open: http://127.0.0.1:5173
 
 ## Demo sequence for judges
 

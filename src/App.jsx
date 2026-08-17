@@ -78,6 +78,7 @@ export default function App() {
   const [votes, setVotes] = useState(() => JSON.parse(localStorage.getItem('civicloop-votes') || '{}'));
   const [modal, setModal] = useState(false);
   const [menu, setMenu] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [toast, setToast] = useState('');
   const [query, setQuery] = useState('');
   const [form, setForm] = useState({ title: '', category: 'Roads', detail: '', area: 'Jagmohan Nagar, Bhubaneswar, Odisha' });
@@ -116,8 +117,9 @@ export default function App() {
         <button className={view === 'reports' ? 'active' : ''} onClick={() => setView('reports')}>Explore issues</button>
         <button className={view === 'budget' ? 'active' : ''} onClick={() => setView('budget')}>Community budget</button>
       </nav>
-      <div className="header-actions"><button className="notification" onClick={() => setToast('You have 2 status updates to review.')}><Bell size={19}/><i></i></button><button className="profile" onClick={() => setMenu(!menu)}><Avatar tone="navy">AS</Avatar><span>Arnab S.</span><ChevronRight size={15} className={menu ? 'rotate' : ''}/></button><button className="mobile-menu" onClick={() => setMenu(!menu)}><Menu size={22}/></button></div>
-      {menu && <div className="user-menu"><button onClick={() => {setView('profile');setMenu(false)}}>My civic profile</button><button onClick={() => {setView('reports');setMenu(false)}}>My reports</button><button onClick={() => setToast('Demo mode — no account data is shared.')}>Privacy & data</button></div>}
+      <div className="header-actions"><button className="notification" aria-label="Open notifications" aria-expanded={notificationsOpen} onClick={() => { setNotificationsOpen(open => !open); setMenu(false); }}><Bell size={19}/><i></i></button><button className="profile" onClick={() => {setMenu(!menu);setNotificationsOpen(false)}}><Avatar tone="navy">AS</Avatar><span>Arnab S.</span><ChevronRight size={15} className={menu ? 'rotate' : ''}/></button><button className="mobile-menu" onClick={() => {setMenu(!menu);setNotificationsOpen(false)}}><Menu size={22}/></button></div>
+      {notificationsOpen && <div className="notification-panel" role="status"><div className="notification-head"><div><b>Notifications</b><span>2 new updates</span></div><button aria-label="Close notifications" onClick={() => setNotificationsOpen(false)}><X size={16}/></button></div><button className="notification-item" onClick={() => {setView('reports');setNotificationsOpen(false)}}><span className="notification-icon progress"><ClipboardCheck size={16}/></span><span><b>Drainage issue updated</b><small>Community Hall report is now in progress.</small></span></button><button className="notification-item" onClick={() => {setView('budget');setNotificationsOpen(false)}}><span className="notification-icon vote"><Heart size={16}/></span><span><b>Community support is growing</b><small>Market Road has received 284 votes.</small></span></button><button className="notification-footer" onClick={() => {setView('reports');setNotificationsOpen(false)}}>View all activity <ArrowRight size={15}/></button></div>}
+      {menu && <div className="user-menu"><button onClick={() => {setView('profile');setMenu(false)}}>My civic profile</button><button onClick={() => {setView('reports');setMenu(false)}}>My reports</button><button onClick={() => setToast('Demo mode ? no account data is shared.')}>Privacy & data</button></div>}
     </header>
 
     {view === 'home' && <Home reports={reports} setView={setView} openReport={openReport} vote={vote} votes={votes} heroParallax={heroParallax}/>} 

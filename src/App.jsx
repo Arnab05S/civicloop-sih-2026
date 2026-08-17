@@ -81,6 +81,9 @@ export default function App() {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [toast, setToast] = useState('');
   const [query, setQuery] = useState('');
+  const [sortMode, setSortMode] = useState('recent');
+  const [selectedReport, setSelectedReport] = useState(null);
+  const [supportedReports, setSupportedReports] = useState(() => JSON.parse(localStorage.getItem('civicloop-report-support') || '{}'));
   const [form, setForm] = useState({ title: '', category: 'Roads', detail: '', area: 'Jagmohan Nagar, Bhubaneswar, Odisha' });
   const { scrollY } = useScroll();
   const heroParallax = useTransform(scrollY, [0, 650], [0, 85]);
@@ -88,9 +91,23 @@ export default function App() {
   useEffect(() => localStorage.setItem('civicloop-reports', JSON.stringify(reports)), [reports]);
   useEffect(() => { fetch(`${API}/reports`).then(r => r.ok ? r.json() : Promise.reject()).then(rows => setReports(rows.map(normaliseReport))).catch(() => {}); }, []);
   useEffect(() => localStorage.setItem('civicloop-votes', JSON.stringify(votes)), [votes]);
+  useEffect(() => localStorage.setItem('civicloop-report-support', JSON.stringify(supportedReports)), [supportedReports]);
   useEffect(() => { if (!toast) return; const t = setTimeout(() => setToast(''), 3200); return () => clearTimeout(t); }, [toast]);
 
   const filteredReports = useMemo(() => reports.filter(r => `${r.title} ${r.category} ${r.area}`.toLowerCase().includes(query.toLowerCase())), [reports, query]);
+  const sortedReports = useMemo(() => {
+    const rows = [...filteredReports];
+    if (sortMode === 'support') return rows.sort((a, b) => b.votes - a.votes);
+    if (sortMode === 'status') { const rank = { 'In Progress': 0, Assigned: 1, Received: 2, Resolved: 3 }; return rows.sort((a, b) => rank[a.status] - rank[b.status]); }
+    return rows;
+  }, [filteredReports, sortMode]);
+  const cycleSort = () => setSortMode(mode => mode === 'recent' ? 'support' : mode === 'support' ? 'status' : 'recent');
+  const supportReport = (id) => {
+    if (supportedReports[id]) return setToast('You already support this issue ? thank you.');
+    setSupportedReports(current => ({...current, [id]: true}));
+    setReports(current => current.map(report => report.id === id ? {...report, votes: report.votes + 1} : report));
+    setToast('Your support has been added to this issue.');
+  };
   const openReport = () => { setForm({ title: '', category: 'Roads', detail: '', area: 'Jagmohan Nagar, Bhubaneswar, Odisha' }); setModal(true); };
   const submitReport = async (e) => {
     e.preventDefault();
@@ -123,12 +140,13 @@ export default function App() {
     </header>
 
     {view === 'home' && <Home reports={reports} setView={setView} openReport={openReport} vote={vote} votes={votes} heroParallax={heroParallax}/>} 
-    {view === 'reports' && <Explore reports={filteredReports} query={query} setQuery={setQuery} openReport={openReport} setView={setView}/>} 
+    {view === 'reports' && <Explore reports={sortedReports} query={query} setQuery={setQuery} openReport={openReport} sortMode={sortMode} cycleSort={cycleSort} selectReport={setSelectedReport}/>} 
     {view === 'budget' && <Budget vote={vote} votes={votes} openReport={openReport}/>} 
     {view === 'profile' && <Profile reports={reports} setView={setView}/>} 
 
     <footer><div className="footer-brand"><span className="brand-mark small"><span></span><span></span><span></span></span> Civic<span>Loop</span></div><p>Transparent action. Better cities, together.</p><div><a href="#privacy" onClick={(e)=>{e.preventDefault();setToast('CivicLoop protects identities by default in this demo.')}}>Privacy</a><a href="#about" onClick={(e)=>{e.preventDefault();setToast('Built for SOA Ideathon 2026.')}}>About</a><a href="#help" onClick={(e)=>{e.preventDefault();setToast('Help center coming soon.')}}>Help</a></div></footer>
     {modal && <ReportModal form={form} setForm={setForm} close={() => setModal(false)} submit={submitReport} reports={reports}/>} 
+    {selectedReport && <ReportDetail report={selectedReport} close={() => setSelectedReport(null)} support={() => supportReport(selectedReport.id)} supported={Boolean(supportedReports[selectedReport.id])}/>} 
     {toast && <div className="toast"><CheckCircle2 size={18}/>{toast}<button onClick={() => setToast('')}><X size={16}/></button></div>}
   </div>;
 }
@@ -146,7 +164,9 @@ function Home({ reports, setView, openReport, vote, votes, heroParallax }) {
 
 function ReportCard({ report }) { return <motion.article className="report-card" initial={{opacity:0,y:18}} whileInView={{opacity:1,y:0}} whileHover={{y:-6,scale:1.01}} viewport={{once:true,amount:.2}} transition={{duration:.32}}><div className="report-visual" style={{background: `${report.color}16`}}><span style={{background: report.color}}>{report.image}</span><div className="category-label" style={{color: report.color}}>{report.category}</div></div><div className="report-body"><div className="report-status"><StatusPill status={report.status}/><span>{report.created}</span></div><h3>{report.title}</h3><p><MapPin size={14}/>{report.area} · {report.distance}</p><Lifecycle status={report.status}/><div className="report-footer"><span><ThumbsUp size={15}/>{report.votes} neighbours</span><button>Details <ChevronRight size={15}/></button></div></div></motion.article> }
 
-function Explore({ reports, query, setQuery, openReport, setView }) { return <main className="page"><div className="page-heading"><div><span className="eyebrow">Live civic pulse</span><h1>Issues in your area</h1><p>Every report is visible. Every update leaves a trail.</p></div><button className="button primary" onClick={openReport}><Plus size={19}/>Report an issue</button></div><div className="explore-layout"><aside className="filters"><div className="searchbox"><Search size={18}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search reports"/></div><h4>Issue category</h4>{categories.map((c,i)=><label key={c}><input type="checkbox" defaultChecked={i < 4}/><span>{c}</span><b>{[12,8,7,4,3,2][i]}</b></label>)}<h4>Report status</h4>{['Received','Assigned','In Progress','Resolved'].map(s=><label key={s}><input type="checkbox" defaultChecked/><StatusPill status={s}/></label>)}<button className="text-button" onClick={()=>setQuery('')}>Clear filters</button></aside><section className="issues-list"><div className="list-top"><b>{reports.length} reports nearby</b><span>Sorted by: <button>Most recent <ChevronRight size={14}/></button></span></div>{reports.map(r=><div className="issue-row" key={r.id}><div className="issue-icon" style={{background:`${r.color}18`, color:r.color}}>{r.image}</div><div className="issue-content"><div><StatusPill status={r.status}/><small>{r.id}</small></div><h3>{r.title}</h3><p><MapPin size={14}/>{r.area} · {r.distance} <span>·</span> Routed to {r.department}</p></div><div className="issue-row-right"><span><ThumbsUp size={15}/>{r.votes}</span><button onClick={()=>setView('home')}>View <ChevronRight size={16}/></button></div></div>)}</section><IssueMap reports={reports}/></div></main> }
+function Explore({ reports, query, setQuery, openReport, sortMode, cycleSort, selectReport }) { const sortLabel = sortMode === 'recent' ? 'Most recent' : sortMode === 'support' ? 'Most supported' : 'Needs attention'; return <main className="page"><div className="page-heading"><div><span className="eyebrow">Live civic pulse</span><h1>Issues in your area</h1><p>Every report is visible. Every update leaves a trail.</p></div><button className="button primary" onClick={openReport}><Plus size={19}/>Report an issue</button></div><div className="explore-layout"><aside className="filters"><div className="searchbox"><Search size={18}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search reports"/></div><h4>Issue category</h4>{categories.map((c,i)=><label key={c}><input type="checkbox" defaultChecked={i < 4}/><span>{c}</span><b>{[12,8,7,4,3,2][i]}</b></label>)}<h4>Report status</h4>{['Received','Assigned','In Progress','Resolved'].map(s=><label key={s}><input type="checkbox" defaultChecked/><StatusPill status={s}/></label>)}<button className="text-button" onClick={()=>setQuery('')}>Clear filters</button></aside><section className="issues-list"><div className="list-top"><b>{reports.length} reports nearby</b><span>Sorted by: <button onClick={cycleSort} aria-label="Change issue sort order">{sortLabel} <ChevronRight size={14}/></button></span></div>{reports.map(r=><div className="issue-row" key={r.id}><div className="issue-icon" style={{background:`${r.color}18`, color:r.color}}>{r.image}</div><div className="issue-content"><div><StatusPill status={r.status}/><small>{r.id}</small></div><h3>{r.title}</h3><p><MapPin size={14}/>{r.area} ? {r.distance} <span>?</span> Routed to {r.department}</p></div><div className="issue-row-right"><span><ThumbsUp size={15}/>{r.votes}</span><button onClick={()=>selectReport(r)}>View <ChevronRight size={16}/></button></div></div>)}</section><IssueMap reports={reports}/></div></main> }
+
+function ReportDetail({ report, close, support, supported }) { return <div className="modal-backdrop" onMouseDown={close}><section className="modal report-detail" onMouseDown={e=>e.stopPropagation()} aria-label="Issue details"><div className="modal-head"><div><span className="eyebrow"><MapPin size={14}/>Issue details</span><h2>{report.title}</h2></div><button aria-label="Close issue details" onClick={close}><X size={20}/></button></div><div className="detail-content"><div className="detail-meta"><StatusPill status={report.status}/><span>{report.id}</span><span><MapPin size={14}/>{report.area}</span></div><p>{report.detail}</p><div className="detail-route"><ClipboardCheck size={19}/><div><b>How CivicLoop is handling this</b><span>This report is routed to {report.department}. Its visible lifecycle helps residents follow the issue from report to resolution.</span></div></div><div className="detail-support"><div><ThumbsUp size={19}/><span><b>{report.votes} neighbours support this</b><small>Community support helps show the scale of the problem.</small></span></div><button className={`button ${supported ? 'voted' : 'primary'}`} onClick={support}>{supported ? <><CheckCircle2 size={17}/>Support recorded</> : <><Heart size={17}/>Support this cause</>}</button></div></div></section></div>}
 
 function MapViewport({ reports }) {
   const map = useMap();

@@ -96,9 +96,9 @@ def init_db():
         );
         """)
         has_rows = conn.execute("SELECT COUNT(*) FROM reports").fetchone()[0]
-        if has_rows:
-            return
-        seed_reports(conn)
+        if not has_rows:
+            seed_reports(conn)
+        seed_mumbai_demo_reports(conn)
 
 def seed_reports(conn):
     samples = [
@@ -118,6 +118,28 @@ def seed_reports(conn):
             VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""", (f"CL-2026-{1800+idx}", title, cat, detail, area, lat, lng, status, DEPARTMENTS[cat], support, stamp, stamp))
         log_event(conn, "report_seeded", "report", cur.lastrowid, f"Seeded report: {title}")
     generate_proposals(conn)
+
+def seed_mumbai_demo_reports(conn):
+    """Add a few Mumbai examples once, without changing existing demo or user reports."""
+    samples = [
+        ("Water logging near Bandra Bandstand", "Drainage", "Rainwater collects along the Bandstand promenade and blocks the pedestrian path after showers.", "Bandra West, Mumbai, Maharashtra", 19.0601, 72.8197, "Received", 22),
+        ("Storm drain blocked on Hill Road", "Drainage", "The roadside drain on Hill Road is blocked with debris and causes water to spill onto the carriageway.", "Bandra West, Mumbai, Maharashtra", 19.0614, 72.8251, "Assigned", 18),
+        ("Damaged footpath near Linking Road", "Roads", "Broken paving near Linking Road forces pedestrians onto the busy road during the evening rush.", "Bandra West, Mumbai, Maharashtra", 19.0652, 72.8338, "In Progress", 16),
+        ("Streetlight out on Carter Road", "Streetlight", "A lamp post near Carter Road promenade has been off for several nights and the walkway is poorly lit.", "Bandra West, Mumbai, Maharashtra", 19.0678, 72.8199, "Received", 14),
+    ]
+    inserted = False
+    for idx, (title, cat, detail, area, lat, lng, status, support) in enumerate(samples, 10):
+        ticket = f"CL-2026-{1800 + idx}"
+        exists = conn.execute("SELECT id FROM reports WHERE ticket=?", (ticket,)).fetchone()
+        if exists:
+            continue
+        stamp = now()
+        cur = conn.execute("""INSERT INTO reports (ticket,title,category,detail,area,lat,lng,status,department,support_count,created_at,updated_at)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""", (ticket, title, cat, detail, area, lat, lng, status, DEPARTMENTS[cat], support, stamp, stamp))
+        log_event(conn, "report_seeded", "report", cur.lastrowid, f"Seeded Mumbai demo report: {title}")
+        inserted = True
+    if inserted:
+        generate_proposals(conn)
 
 def cluster_reports(rows, radius=350):
     remaining = [dict(r) for r in rows]

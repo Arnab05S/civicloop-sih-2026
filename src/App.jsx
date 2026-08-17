@@ -10,9 +10,9 @@ import {
 } from 'lucide-react';
 
 const initialReports = [
-  { id: 'CL-2026-1842', title: 'Overflowing drain near Community Hall', category: 'Drainage', area: 'Jagmohan Nagar, Bhubaneswar', distance: '120 m', status: 'In Progress', created: 'Today, 10:24 AM', votes: 28, color: '#ff8b3d', detail: 'Drain water is overflowing onto the road after the morning rain. Pedestrians and school buses are affected.', department: 'Sanitation & Drainage', image: '🌊' },
-  { id: 'CL-2026-1837', title: 'Broken streetlight at Block C crossing', category: 'Streetlight', area: 'Jagmohan Nagar, Bhubaneswar', distance: '280 m', status: 'Assigned', created: 'Yesterday', votes: 17, color: '#8f6cff', detail: 'The crossing has been dark for the last three nights. Visibility is poor after sunset.', department: 'Electrical Maintenance', image: '💡' },
-  { id: 'CL-2026-1828', title: 'Deep pothole on Main Market Road', category: 'Roads', area: 'Jagmohan Nagar, Bhubaneswar', distance: '410 m', status: 'Received', created: '2 days ago', votes: 41, color: '#ef5f70', detail: 'A pothole beside the bus stop is causing traffic to swerve into the opposite lane.', department: 'Roads & Works', image: '🕳️' },
+  { id: 'CL-2026-1842', title: 'Overflowing drain near Community Hall', category: 'Drainage', area: 'Jagmohan Nagar, Bhubaneswar, Odisha', distance: '120 m', status: 'In Progress', created: 'Today, 10:24 AM', votes: 28, color: '#ff8b3d', detail: 'Drain water is overflowing onto the road after the morning rain. Pedestrians and school buses are affected.', department: 'Sanitation & Drainage', image: '🌊' },
+  { id: 'CL-2026-1837', title: 'Broken streetlight at Block C crossing', category: 'Streetlight', area: 'Jagmohan Nagar, Bhubaneswar, Odisha', distance: '280 m', status: 'Assigned', created: 'Yesterday', votes: 17, color: '#8f6cff', detail: 'The crossing has been dark for the last three nights. Visibility is poor after sunset.', department: 'Electrical Maintenance', image: '💡' },
+  { id: 'CL-2026-1828', title: 'Deep pothole on Main Market Road', category: 'Roads', area: 'Jagmohan Nagar, Bhubaneswar, Odisha', distance: '410 m', status: 'Received', created: '2 days ago', votes: 41, color: '#ef5f70', detail: 'A pothole beside the bus stop is causing traffic to swerve into the opposite lane.', department: 'Roads & Works', image: '🕳️' },
   { id: 'CL-2026-1804', title: 'Waste collection missed on 7th Lane', category: 'Waste', area: 'Saheed Nagar', distance: '650 m', status: 'Resolved', created: '4 days ago', votes: 13, color: '#2bb7a8', detail: 'Household waste has not been collected since Monday.', department: 'Solid Waste Management', image: '♻️' }
 ];
 
@@ -25,6 +25,44 @@ const proposals = [
 const API = import.meta.env.VITE_API_URL || 'https://civicloop-api.onrender.com';
 const categoryColor = { Roads: '#ef5f70', Drainage: '#ff8b3d', Streetlight: '#8f6cff', Waste: '#2bb7a8', Water: '#177e89', Other: '#64748b' };
 const categories = ['Roads', 'Drainage', 'Streetlight', 'Waste', 'Water', 'Other'];
+// Deliberately curated: broad national coverage without loading a large location dataset into the MVP.
+const locations = [
+  { label: 'Jagmohan Nagar, Bhubaneswar, Odisha', lat: 20.2961, lng: 85.8245 },
+  { label: 'Patia, Bhubaneswar, Odisha', lat: 20.3530, lng: 85.8206 },
+  { label: 'Bandra West, Mumbai, Maharashtra', lat: 19.0596, lng: 72.8295 },
+  { label: 'Koregaon Park, Pune, Maharashtra', lat: 18.5362, lng: 73.8935 },
+  { label: 'Dharampeth, Nagpur, Maharashtra', lat: 21.1403, lng: 79.0569 },
+  { label: 'Navrangpura, Ahmedabad, Gujarat', lat: 23.0407, lng: 72.5619 },
+  { label: 'Panjim, Panaji, Goa', lat: 15.4989, lng: 73.8278 },
+  { label: 'C-Scheme, Jaipur, Rajasthan', lat: 26.9124, lng: 75.7873 },
+  { label: 'Hauz Khas, New Delhi, Delhi', lat: 28.5494, lng: 77.2001 },
+  { label: 'Sector 17, Chandigarh, Chandigarh', lat: 30.7409, lng: 76.7813 },
+  { label: 'Gomti Nagar, Lucknow, Uttar Pradesh', lat: 26.8508, lng: 81.0013 },
+  { label: 'Rajbagh, Srinagar, Jammu and Kashmir', lat: 34.0307, lng: 74.8509 },
+  { label: 'Arera Colony, Bhopal, Madhya Pradesh', lat: 23.2319, lng: 77.4320 },
+  { label: 'Vijay Nagar, Indore, Madhya Pradesh', lat: 22.7533, lng: 75.8937 },
+  { label: 'Telibandha, Raipur, Chhattisgarh', lat: 21.2391, lng: 81.6812 },
+  { label: 'Indiranagar, Bengaluru, Karnataka', lat: 12.9784, lng: 77.6408 },
+  { label: 'Banjara Hills, Hyderabad, Telangana', lat: 17.4156, lng: 78.4347 },
+  { label: 'Adyar, Chennai, Tamil Nadu', lat: 13.0067, lng: 80.2575 },
+  { label: 'Fort Kochi, Kochi, Kerala', lat: 9.9656, lng: 76.2425 },
+  { label: 'MVP Colony, Visakhapatnam, Andhra Pradesh', lat: 17.7385, lng: 83.3385 },
+  { label: 'White Town, Puducherry, Puducherry', lat: 11.9315, lng: 79.8347 },
+  { label: 'Park Street, Kolkata, West Bengal', lat: 22.5518, lng: 88.3528 },
+  { label: 'Bistupur, Jamshedpur, Jharkhand', lat: 22.8028, lng: 86.1837 },
+  { label: 'Fraser Road, Patna, Bihar', lat: 25.6105, lng: 85.1410 },
+  { label: 'Paltan Bazar, Guwahati, Assam', lat: 26.1836, lng: 91.7538 },
+  { label: 'Police Bazar, Shillong, Meghalaya', lat: 25.5712, lng: 91.8822 },
+  { label: 'Kunjaban, Agartala, Tripura', lat: 23.8487, lng: 91.2918 },
+  { label: 'Thangal Bazar, Imphal, Manipur', lat: 24.8097, lng: 93.9409 },
+  { label: 'Dhobinala, Dimapur, Nagaland', lat: 25.9081, lng: 93.7265 },
+  { label: 'Zarkawt, Aizawl, Mizoram', lat: 23.7270, lng: 92.7178 },
+  { label: 'Ganga Market, Itanagar, Arunachal Pradesh', lat: 27.0844, lng: 93.6053 },
+  { label: 'Deorali, Gangtok, Sikkim', lat: 27.3189, lng: 88.6084 },
+  { label: 'Kashmiri Gate, New Delhi, Delhi', lat: 28.6650, lng: 77.2290 },
+  { label: 'Kakkanad, Kochi, Kerala', lat: 10.0159, lng: 76.3419 }
+];
+const locationByLabel = Object.fromEntries(locations.map(location => [location.label, location]));
 const statusStyle = { Received: 'status-received', Assigned: 'status-assigned', 'In Progress': 'status-progress', Resolved: 'status-resolved' };
 const normaliseReport = (r) => ({ id: r.ticket || r.id, title: r.title, category: r.category, area: r.area, lat: r.lat, lng: r.lng, distance: 'Nearby', status: r.status, created: r.created_at ? new Date(r.created_at).toLocaleDateString() : 'Just now', votes: r.support_count ?? r.votes ?? 1, color: categoryColor[r.category] || '#64748b', detail: r.detail, department: r.department, image: iconFor(r.category) });
 
@@ -42,7 +80,7 @@ export default function App() {
   const [menu, setMenu] = useState(false);
   const [toast, setToast] = useState('');
   const [query, setQuery] = useState('');
-  const [form, setForm] = useState({ title: '', category: 'Roads', detail: '', area: 'Jagmohan Nagar, Bhubaneswar' });
+  const [form, setForm] = useState({ title: '', category: 'Roads', detail: '', area: 'Jagmohan Nagar, Bhubaneswar, Odisha' });
   const { scrollY } = useScroll();
   const heroParallax = useTransform(scrollY, [0, 650], [0, 85]);
 
@@ -52,12 +90,13 @@ export default function App() {
   useEffect(() => { if (!toast) return; const t = setTimeout(() => setToast(''), 3200); return () => clearTimeout(t); }, [toast]);
 
   const filteredReports = useMemo(() => reports.filter(r => `${r.title} ${r.category} ${r.area}`.toLowerCase().includes(query.toLowerCase())), [reports, query]);
-  const openReport = () => { setForm({ title: '', category: 'Roads', detail: '', area: 'Jagmohan Nagar, Bhubaneswar' }); setModal(true); };
+  const openReport = () => { setForm({ title: '', category: 'Roads', detail: '', area: 'Jagmohan Nagar, Bhubaneswar, Odisha' }); setModal(true); };
   const submitReport = async (e) => {
     e.preventDefault();
     if (!form.title.trim() || !form.detail.trim()) return setToast('Please add an issue title and description.');
     try {
-      const res = await fetch(`${API}/reports`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({...form, lat:20.2961, lng:85.8245}) });
+      const selectedLocation = locationByLabel[form.area] || locations[0];
+      const res = await fetch(`${API}/reports`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({...form, lat:selectedLocation.lat, lng:selectedLocation.lng}) });
       if (!res.ok) throw new Error('API unavailable');
       const data = await res.json(); const report = normaliseReport(data.report);
       setReports(current => data.duplicate ? current.map(r => r.id === report.id ? report : r) : [report, ...current]);
@@ -128,6 +167,6 @@ function Budget({ vote, votes, openReport }) { return <main className="page budg
 
 function Profile({ reports, setView }) { return <main className="page profile-page"><div className="profile-hero"><Avatar tone="navy">AS</Avatar><div><span className="eyebrow">Civic profile</span><h1>Arnab S.</h1><p>Neighbour · Jagmohan Nagar, Bhubaneswar</p></div><button className="button outline" onClick={()=>setView('reports')}>Explore issues</button></div><div className="profile-stats"><div><strong>4</strong><span>reports raised</span></div><div><strong>12</strong><span>issues supported</span></div><div><strong>3</strong><span>budget votes</span></div></div><section className="section"><div className="section-heading"><div><span className="eyebrow">Your activity</span><h2>Reports you are following</h2></div><button className="button primary" onClick={()=>setView('reports')}>View issues</button></div><div className="report-grid">{reports.slice(0,3).map(r=><ReportCard key={r.id} report={r}/>)}</div></section></main> }
 
-function ReportModal({ form, setForm, close, submit, reports }) { const sameCategory = reports.filter(r=>r.category===form.category && r.area===form.area).slice(0,1); return <div className="modal-backdrop" onMouseDown={close}><div className="modal" onMouseDown={e=>e.stopPropagation()}><div className="modal-head"><div><span className="eyebrow">New civic report</span><h2>Help us see the issue clearly</h2></div><button onClick={close}><X size={20}/></button></div><form onSubmit={submit}><label>What needs attention?<input autoFocus value={form.title} onChange={e=>setForm({...form,title:e.target.value})} placeholder="e.g. Pothole near bus stop" /></label><div className="two-col"><label>Issue type<select value={form.category} onChange={e=>setForm({...form,category:e.target.value})}>{categories.map(c=><option key={c}>{c}</option>)}</select></label><label>Neighbourhood<select value={form.area} onChange={e=>setForm({...form,area:e.target.value})}><option>Jagmohan Nagar, Bhubaneswar</option><option>Saheed Nagar</option><option>Patia</option></select></label></div><label>Describe what you saw<textarea value={form.detail} onChange={e=>setForm({...form,detail:e.target.value})} placeholder="Include the landmark, severity, and when you noticed it." rows="4"/></label>{sameCategory.length>0 && form.title && <div className="duplicate-hint"><Sparkles size={18}/><span><b>Possible related issue:</b> {sameCategory[0].title} is already open nearby. We’ll link reports so the team sees the full picture.</span></div>}<div className="privacy-note"><ShieldCheck size={17}/>Your name and contact details are protected by default.</div><div className="modal-actions"><button type="button" className="button soft" onClick={close}>Cancel</button><button className="button primary" type="submit">Submit report <ArrowRight size={17}/></button></div></form></div></div> }
+function ReportModal({ form, setForm, close, submit, reports }) { const sameCategory = reports.filter(r=>r.category===form.category && r.area===form.area).slice(0,1); return <div className="modal-backdrop" onMouseDown={close}><div className="modal" onMouseDown={e=>e.stopPropagation()}><div className="modal-head"><div><span className="eyebrow">New civic report</span><h2>Help us see the issue clearly</h2></div><button onClick={close}><X size={20}/></button></div><form onSubmit={submit}><label>What needs attention?<input autoFocus value={form.title} onChange={e=>setForm({...form,title:e.target.value})} placeholder="e.g. Pothole near bus stop" /></label><div className="two-col"><label>Issue type<select value={form.category} onChange={e=>setForm({...form,category:e.target.value})}>{categories.map(c=><option key={c}>{c}</option>)}</select></label><label>Neighbourhood<select value={form.area} onChange={e=>setForm({...form,area:e.target.value})}>{locations.map(location=><option key={location.label} value={location.label}>{location.label}</option>)}</select><small className="location-context">City and state are included for accurate routing.</small></label></div><label>Describe what you saw<textarea value={form.detail} onChange={e=>setForm({...form,detail:e.target.value})} placeholder="Include the landmark, severity, and when you noticed it." rows="4"/></label>{sameCategory.length>0 && form.title && <div className="duplicate-hint"><Sparkles size={18}/><span><b>Possible related issue:</b> {sameCategory[0].title} is already open nearby. We’ll link reports so the team sees the full picture.</span></div>}<div className="privacy-note"><ShieldCheck size={17}/>Your name and contact details are protected by default.</div><div className="modal-actions"><button type="button" className="button soft" onClick={close}>Cancel</button><button className="button primary" type="submit">Submit report <ArrowRight size={17}/></button></div></form></div></div> }
 function departmentFor(c){return ({Roads:'Roads & Works',Drainage:'Sanitation & Drainage',Streetlight:'Electrical Maintenance',Waste:'Solid Waste Management',Water:'Water Supply'})[c]||'Civic Response Team'}
 function iconFor(c){return ({Roads:'🛣️',Drainage:'🌊',Streetlight:'💡',Waste:'♻️',Water:'💧'})[c]||'📍'}

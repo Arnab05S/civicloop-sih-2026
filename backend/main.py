@@ -98,7 +98,7 @@ def init_db():
         has_rows = conn.execute("SELECT COUNT(*) FROM reports").fetchone()[0]
         if not has_rows:
             seed_reports(conn)
-        seed_mumbai_demo_reports(conn)
+        seed_city_demo_reports(conn)
 
 def seed_reports(conn):
     samples = [
@@ -119,13 +119,17 @@ def seed_reports(conn):
         log_event(conn, "report_seeded", "report", cur.lastrowid, f"Seeded report: {title}")
     generate_proposals(conn)
 
-def seed_mumbai_demo_reports(conn):
+def seed_city_demo_reports(conn):
     """Add a few Mumbai examples once, without changing existing demo or user reports."""
     samples = [
         ("Water logging near Bandra Bandstand", "Drainage", "Rainwater collects along the Bandstand promenade and blocks the pedestrian path after showers.", "Bandra West, Mumbai, Maharashtra", 19.0601, 72.8197, "Received", 22),
         ("Storm drain blocked on Hill Road", "Drainage", "The roadside drain on Hill Road is blocked with debris and causes water to spill onto the carriageway.", "Bandra West, Mumbai, Maharashtra", 19.0614, 72.8251, "Assigned", 18),
         ("Damaged footpath near Linking Road", "Roads", "Broken paving near Linking Road forces pedestrians onto the busy road during the evening rush.", "Bandra West, Mumbai, Maharashtra", 19.0652, 72.8338, "In Progress", 16),
         ("Streetlight out on Carter Road", "Streetlight", "A lamp post near Carter Road promenade has been off for several nights and the walkway is poorly lit.", "Bandra West, Mumbai, Maharashtra", 19.0678, 72.8199, "Received", 14),
+        ("Damaged footpath near Hauz Khas Metro", "Roads", "Broken paving near Hauz Khas Metro forces pedestrians toward the road during busy evening hours.", "Hauz Khas, New Delhi, Delhi", 28.5438, 77.2060, "Assigned", 20),
+        ("Streetlight dark near Deer Park", "Streetlight", "The pathway beside Deer Park is poorly lit after sunset because a streetlight has stopped working.", "Hauz Khas, New Delhi, Delhi", 28.5542, 77.1948, "Received", 15),
+        ("Water logging near Adyar Bridge", "Drainage", "Rainwater builds up near Adyar Bridge and slows pedestrians, buses and two-wheelers during monsoon showers.", "Adyar, Chennai, Tamil Nadu", 13.0060, 80.2551, "In Progress", 24),
+        ("Waste bins overflowing in Besant Nagar", "Waste", "Public bins near the beach-side lane have not been cleared and waste is overflowing onto the footpath.", "Besant Nagar, Chennai, Tamil Nadu", 13.0012, 80.2664, "Received", 17),
     ]
     inserted = False
     for idx, (title, cat, detail, area, lat, lng, status, support) in enumerate(samples, 10):

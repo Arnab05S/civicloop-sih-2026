@@ -34,6 +34,7 @@ class ReportCreate(BaseModel):
     area: str = Field(default="Jagmohan Nagar, Bhubaneswar", max_length=80)
     lat: float = 20.2961
     lng: float = 85.8245
+    incident_image: str | None = Field(default=None, max_length=1_600_000)
 
 class StatusUpdate(BaseModel):
     status: Literal["Received", "Assigned", "In Progress", "Resolved"]
@@ -79,7 +80,7 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT, ticket TEXT UNIQUE NOT NULL, title TEXT NOT NULL,
             category TEXT NOT NULL, detail TEXT NOT NULL, area TEXT NOT NULL, lat REAL NOT NULL, lng REAL NOT NULL,
             status TEXT NOT NULL DEFAULT 'Received', department TEXT NOT NULL, support_count INTEGER NOT NULL DEFAULT 1,
-            duplicate_of INTEGER, resolution_photo_url TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+            duplicate_of INTEGER, incident_image TEXT, resolution_photo_url TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL
         );
         CREATE TABLE IF NOT EXISTS proposals (
             id INTEGER PRIMARY KEY AUTOINCREMENT, hotspot_key TEXT UNIQUE NOT NULL, title TEXT NOT NULL,
@@ -95,6 +96,9 @@ def init_db():
             entity_id INTEGER NOT NULL, summary TEXT NOT NULL, created_at TEXT NOT NULL
         );
         """)
+        columns = {row["name"] for row in conn.execute("PRAGMA table_info(reports)").fetchall()}
+        if "incident_image" not in columns:
+            conn.execute("ALTER TABLE reports ADD COLUMN incident_image TEXT")
         has_rows = conn.execute("SELECT COUNT(*) FROM reports").fetchone()[0]
         if not has_rows:
             seed_reports(conn)
@@ -223,8 +227,8 @@ def create_report(payload: ReportCreate):
             return {"report": as_dict(report), "duplicate": True, "message": "Linked to a nearby related report."}
         count = conn.execute("SELECT COUNT(*) FROM reports").fetchone()[0] + 1
         stamp = now(); ticket = f"CL-2026-{1800+count}"
-        cur = conn.execute("""INSERT INTO reports (ticket,title,category,detail,area,lat,lng,status,department,created_at,updated_at)
-          VALUES (?,?,?,?,?,?,?,?,?,?,?)""", (ticket,payload.title,category,payload.detail,payload.area,payload.lat,payload.lng,"Received",DEPARTMENTS[category],stamp,stamp))
+        cur = conn.execute("""INSERT INTO reports (ticket,title,category,detail,area,lat,lng,status,department,incident_image,created_at,updated_at)
+          VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""", (ticket,payload.title,category,payload.detail,payload.area,payload.lat,payload.lng,"Received",DEPARTMENTS[category],payload.incident_image,stamp,stamp))
         log_event(conn, "report_created", "report", cur.lastrowid, f"Report received and routed to {DEPARTMENTS[category]}.")
         generate_proposals(conn)
         report = conn.execute("SELECT * FROM reports WHERE id=?", (cur.lastrowid,)).fetchone()

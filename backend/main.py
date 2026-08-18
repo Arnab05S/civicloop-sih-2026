@@ -12,6 +12,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Literal
 
+import numpy as np
+from sentence_transformers import SentenceTransformer
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
@@ -20,6 +23,10 @@ BASE_DIR = Path(__file__).resolve().parent
 DB_PATH = BASE_DIR / "civicloop.db"
 app = FastAPI(title="CivicLoop API", version="0.1.0", description="Evidence-grounded civic reporting and participatory budgeting.")
 app.add_middleware(CORSMiddleware, allow_origins=["http://127.0.0.1:5173", "http://localhost:5173"], allow_origin_regex=r"https://([a-z0-9-]+\.)?vercel\.app", allow_methods=["*"], allow_headers=["*"])
+
+print("Loading AI Embedding Model (all-MiniLM-L6-v2)...")
+model = SentenceTransformer('all-MiniLM-L6-v2')
+print("AI Model loaded successfully!")
 
 DEPARTMENTS = {
     "Roads": "Roads & Works", "Drainage": "Sanitation & Drainage", "Streetlight": "Electrical Maintenance",
@@ -61,13 +68,6 @@ def as_dict(row):
 
 def log_event(conn, event_type: str, entity_type: str, entity_id: int, summary: str):
     conn.execute("INSERT INTO audit_log (event_type, entity_type, entity_id, summary, created_at) VALUES (?, ?, ?, ?, ?)", (event_type, entity_type, entity_id, summary, now()))
-
-def cosine_tokens(a: str, b: str) -> float:
-    """Lightweight, dependency-free demo similarity. Production uses sentence-transformers embeddings."""
-    stop = {"the", "a", "an", "is", "and", "of", "to", "in", "on", "near", "at", "for", "with", "has", "been"}
-    ta = {x.strip(".,!?;:()[]").lower() for x in a.split()} - stop
-    tb = {x.strip(".,!?;:()[]").lower() for x in b.split()} - stop
-    return len(ta & tb) / math.sqrt(max(1, len(ta)) * max(1, len(tb)))
 
 def distance_m(lat1, lng1, lat2, lng2):
     # Sufficient for small-neighbourhood demo radius calculations.
@@ -219,12 +219,29 @@ def create_report(payload: ReportCreate):
     category = payload.category if payload.category in DEPARTMENTS else "Other"
     with db() as conn:
         nearby = conn.execute("SELECT * FROM reports WHERE category=? AND duplicate_of IS NULL", (category,)).fetchall()
-        match = next((r for r in nearby if distance_m(payload.lat,payload.lng,r["lat"],r["lng"]) <= 250 and cosine_tokens(payload.detail, r["detail"]) >= .28), None)
+        
+        match = None
+        if nearby:
+            new_vector = model.encode([payload.detail])[0]
+            norm_new = np.linalg.norm(new_vector)
+            
+            for r in nearby:
+                if distance_m(payload.lat, payload.lng, r["lat"], r["lng"]) <= 250:
+                    existing_vector = model.encode([r["detail"]])[0]
+                    norm_existing = np.linalg.norm(existing_vector)
+                    
+                    similarity = np.dot(new_vector, existing_vector) / (norm_new * norm_existing)
+                    
+                    if similarity >= 0.50:
+                        match = r
+                        break
+
         if match:
             conn.execute("UPDATE reports SET support_count=support_count+1, updated_at=? WHERE id=?", (now(), match["id"]))
             log_event(conn, "duplicate_confirmed", "report", match["id"], f"A similar report was linked; support count increased.")
             report = conn.execute("SELECT * FROM reports WHERE id=?", (match["id"],)).fetchone()
             return {"report": as_dict(report), "duplicate": True, "message": "Linked to a nearby related report."}
+        
         count = conn.execute("SELECT COUNT(*) FROM reports").fetchone()[0] + 1
         stamp = now(); ticket = f"CL-2026-{1800+count}"
         cur = conn.execute("""INSERT INTO reports (ticket,title,category,detail,area,lat,lng,status,department,incident_image,created_at,updated_at)
@@ -232,6 +249,7 @@ def create_report(payload: ReportCreate):
         log_event(conn, "report_created", "report", cur.lastrowid, f"Report received and routed to {DEPARTMENTS[category]}.")
         generate_proposals(conn)
         report = conn.execute("SELECT * FROM reports WHERE id=?", (cur.lastrowid,)).fetchone()
+        
     return {"report": as_dict(report), "duplicate": False, "message": "Report logged and routed."}
 
 @app.put("/reports/{ticket}/status")
